@@ -19,6 +19,8 @@ private let hotKeySignature: OSType = {
 private let hotKeyIDNumber: UInt32 = 1
 private let deleteKey: Int64 = 51
 private let forwardDeleteKey: Int64 = 117
+private let returnKey: Int64 = 36
+private let keypadEnterKey: Int64 = 76
 
 private func err(_ message: String) {
     FileHandle.standardError.write(Data(message.utf8))
@@ -123,24 +125,33 @@ private func acquireLock() -> Bool {
 }
 
 private struct PhraseMatcher {
-    private let phrase: [Character]
+    private let phrase: String
     private var buffer: [Character] = []
+    // 一次回车只看最近这一段，避免有人一直按键把缓冲撑得太大。
+    private let maxBuffer = 8192
 
     init(phrase: String) {
-        self.phrase = Array(phrase)
+        self.phrase = phrase
     }
 
-    mutating func feed(_ text: String) -> Bool {
-        guard !phrase.isEmpty, !text.isEmpty else { return false }
+    mutating func feed(_ text: String) {
+        guard !phrase.isEmpty, !text.isEmpty else { return }
         buffer.append(contentsOf: text)
-        if buffer.count > phrase.count {
-            buffer.removeFirst(buffer.count - phrase.count)
+        if buffer.count > maxBuffer {
+            buffer.removeFirst(buffer.count - maxBuffer)
         }
-        return buffer == phrase
     }
 
     mutating func backspace() {
         if !buffer.isEmpty { buffer.removeLast() }
+    }
+
+    /// 回车才检查。口令出现在任意位置即可，前后的其他字符忽略。失败后清空，下次重打。
+    mutating func confirm() -> Bool {
+        guard !phrase.isEmpty else { return false }
+        let matched = String(buffer).contains(phrase)
+        buffer.removeAll()
+        return matched
     }
 
     static func runTests() -> Bool {
@@ -153,26 +164,36 @@ private struct PhraseMatcher {
         }
 
         var matcher = PhraseMatcher(phrase: "secret")
-        check("partial", matcher.feed("sec") == false)
-        check("exact", matcher.feed("ret") == true)
+        matcher.feed("secret")
+        check("needs enter", matcher.confirm() == true)
 
         matcher = PhraseMatcher(phrase: "secret")
-        check("prefix", matcher.feed("xxsecret") == true)
+        matcher.feed("xxsecret")
+        check("prefix", matcher.confirm() == true)
 
         matcher = PhraseMatcher(phrase: "secret")
-        check("not yet", matcher.feed("secrXet") == false)
+        matcher.feed("secretYY")
+        check("suffix", matcher.confirm() == true)
+
+        matcher = PhraseMatcher(phrase: "secret")
+        matcher.feed("hello secret world")
+        check("both sides", matcher.confirm() == true)
+
+        matcher = PhraseMatcher(phrase: "secret")
+        matcher.feed("secrXet")
+        check("broken", matcher.confirm() == false)
+        matcher.feed("xxsecret")
+        check("retry after fail", matcher.confirm() == true)
 
         matcher = PhraseMatcher(phrase: "ab")
-        _ = matcher.feed("a")
+        matcher.feed("a")
         matcher.backspace()
-        check("backspace", matcher.feed("ab") == true)
+        matcher.feed("zzabby")
+        check("backspace", matcher.confirm() == true)
 
-        matcher = PhraseMatcher(phrase: "ab")
-        check("overshoot", matcher.feed("abc") == false)
-        check("tail", matcher.feed("ab") == true)
-
-        matcher = PhraseMatcher(phrase: "你好呀呀呀")
-        check("unicode", matcher.feed("你好呀呀呀") == true)
+        matcher = PhraseMatcher(phrase: "你好呀")
+        matcher.feed("啊你好呀哦")
+        check("unicode", matcher.confirm() == true)
 
         check("short phrase", phraseProblem("short") != nil)
         check("ok phrase", phraseProblem("longenough") == nil)
@@ -464,38 +485,42 @@ private final class Engine {
         }
         guard covered, type == .keyDown else { return nil }
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-        if keyCode == deleteKey || keyCode == forwardDeleteKey {
-            matcher.backspace()
-            return nil
-        }
-        if event.flags.contains(.maskCommand) || event.flags.contains(.maskControl) {
-            return nil
-        }
-        let text = unicodeString(event)
-        guard isTypable(text) else { return nil }
-        if matcher.feed(text), !unlocking {
-            unlocking = true
-            DispatchQueue.main.async { [weak self] in
-                self?.release(quit: false)
-            }
+        let command = event.flags.contains(.maskCommand)
+        let control = event.flags.contains(.maskControl)
+        if acceptKey(keyCode: keyCode, text: unicodeString(event), command: command, control: control) {
+            scheduleUnlock()
         }
         return nil
     }
 
     private func feedLocal(_ event: NSEvent) {
         let keyCode = Int64(event.keyCode)
+        let command = event.modifierFlags.contains(.command)
+        let control = event.modifierFlags.contains(.control)
+        if acceptKey(keyCode: keyCode, text: event.characters ?? "", command: command, control: control) {
+            scheduleUnlock()
+        }
+    }
+
+    private func acceptKey(keyCode: Int64, text: String, command: Bool, control: Bool) -> Bool {
+        if keyCode == returnKey || keyCode == keypadEnterKey {
+            if command || control || unlocking { return false }
+            return matcher.confirm()
+        }
         if keyCode == deleteKey || keyCode == forwardDeleteKey {
             matcher.backspace()
-            return
+            return false
         }
-        if event.modifierFlags.contains(.command) || event.modifierFlags.contains(.control) {
-            return
-        }
-        let text = event.characters ?? ""
-        guard isTypable(text) else { return }
-        if matcher.feed(text), !unlocking {
-            unlocking = true
-            release(quit: false)
+        if command || control || !isTypable(text) { return false }
+        matcher.feed(text)
+        return false
+    }
+
+    private func scheduleUnlock() {
+        guard !unlocking else { return }
+        unlocking = true
+        DispatchQueue.main.async { [weak self] in
+            self?.release(quit: false)
         }
     }
 
@@ -973,7 +998,7 @@ private func commandSetPhrase() {
             exit(1)
         }
         err("已保存到 \(Paths.phrase.path)\n")
-        err("黑屏后画面上没有任何提示，盲打这句口令才会退出。区分大小写。\n")
+        err("黑屏后没有提示。口令前后可以夹别的字，打完按回车才退出。区分大小写。\n")
         if phrase.allSatisfy(\.isASCII) == false {
             err("口令含非英文字符。黑屏时不会切到英文输入法，输入法候选条可能露出来。\n")
         }
@@ -1018,7 +1043,9 @@ blackout — 把所有显示器盖成纯黑。程序继续跑，会话也不锁�
   blackout help            显示这段说明
 
 解锁
-  黑屏后直接打口令，没有输入框，也没有对错提示。打对画面才回来。
+  黑屏后打一串字，里面含有口令即可，前后可以是别的字符。按回车才检查。
+  没有输入框，也没有对错提示。回车时这段字里有口令，画面才回来。
+  没有口令就保持黑屏，刚才打的内容作废，可以再打一次。
   纯英文口令会临时切到 ABC 输入法，退出后切回去。
   平常不抢走当前应用的焦点，下载和播放会继续。
   如果焦点当时在密码框里，会先拿走焦点，否则系统不让别的程序看到这些按键。

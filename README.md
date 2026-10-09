@@ -1,8 +1,8 @@
 # blackout
 
-把每块显示器盖成纯黑，程序继续跑，会话保持解锁。黑屏后没有输入框。退出方式是盲打你自己事先设好的口令。
+把每块显示器盖成纯黑，程序继续跑，会话保持解锁。黑屏后没有输入框。打一串字，里面含有你设的口令即可，前后可以夹别的字符，然后按回车。
 
-A fullscreen black cover for macOS. Programs keep running and the session stays unlocked. Nothing is drawn on the black screen. You leave by typing a passphrase you chose beforehand.
+A fullscreen black cover for macOS. Programs keep running and the session stays unlocked. Nothing is drawn on the black screen. Type any text that contains your passphrase, then press Return.
 
 [中文](#中文) · [English](#english)
 
@@ -26,13 +26,13 @@ A fullscreen black cover for macOS. Programs keep running and the session stays 
    blackout set-phrase
    ```
 
-2. 用 demo 练一次。画面黑 5 秒，然后自己恢复。这 5 秒里盲打 `open-sesame` 会立刻恢复。
+2. 用 demo 练一次。画面黑 5 秒，然后自己恢复。这 5 秒里打出 `open-sesame` 再按回车，会立刻恢复。口令前后可以夹别的字，例如 `xxopen-sesameyy` 再按回车也可以。
 
    ```bash
    blackout demo
    ```
 
-3. 正式黑屏后再打同一句。区分大小写。打对了画面立刻回来，打错没有任何反应。退格键可以删掉刚打错的字符。
+3. 正式黑屏后同样这么做。区分大小写。回车时这段文字里含有口令，画面才回来。没有口令就保持黑屏，刚才打的内容作废。退格键可以删掉刚打错的字符。只打口令、不按回车，不会退出。
 
    ```bash
    blackout
@@ -116,7 +116,7 @@ cd blackout
 
 按这个顺序试：
 
-1. 盲打设过的口令。
+1. 打一串含有口令的字，然后按回车。
 2. SSH 到这台 Mac，运行 `~/.local/bin/blackout off`。
 3. 还在的话运行 `~/.local/bin/blackout quit`，或 `killall blackout`。
 4. 光标没回来就运行 `blackout --show-cursor`。
@@ -142,13 +142,13 @@ The black screen has no field and no hint. You type the passphrase you stored wi
    blackout set-phrase
    ```
 
-2. Practice with the demo. The screen goes black for 5 seconds, then comes back by itself. Typing `open-sesame` during those 5 seconds dismisses it immediately.
+2. Practice with the demo. The screen goes black for 5 seconds, then comes back by itself. During those 5 seconds, type `open-sesame` and press Return. Extra characters before or after the phrase are fine, so `xxopen-sesameyy` then Return also works.
 
    ```bash
    blackout demo
    ```
 
-3. Cover the screen for real and type the same phrase. Matching is case-sensitive. A correct phrase clears the cover at once. A wrong phrase does nothing. Backspace deletes the last typed character.
+3. Cover the screen the same way. Matching is case-sensitive. Return checks the text you just typed. If that text contains the phrase, the cover clears. If it does not, the screen stays black and that attempt is discarded. Backspace deletes the last character. Typing the phrase without Return does nothing.
 
    ```bash
    blackout
@@ -232,7 +232,7 @@ The real lock is Control+Command+Q. That is the login boundary. It shows your pi
 
 Try these in order:
 
-1. Type the passphrase you set.
+1. Type text that contains the passphrase, then press Return.
 2. SSH into this Mac and run `~/.local/bin/blackout off`.
 3. If it is still covered, run `~/.local/bin/blackout quit`, or `killall blackout`.
 4. If the cursor stays hidden, run `blackout --show-cursor`.
