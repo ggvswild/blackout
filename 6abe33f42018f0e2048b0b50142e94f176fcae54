@@ -1,0 +1,78 @@
+.gitignore
+  86e9f208f57cfa26 3-4
+Info.plist
+  86e9f208f57cfa26 14,16-18
+dmg/render-background.swift
+  86e9f208f57cfa26 1-88
+icon/render.swift
+  86e9f208f57cfa26 1-165
+dmg.sh
+  86e9f208f57cfa26 1-102
+build.sh
+  86e9f208f57cfa26 6,13-22
+main.swift
+  86e9f208f57cfa26 36-100,125,263,903,1037,1062-1064,1095,1108-1112,1201-1203
+README.md
+  86e9f208f57cfa26 41,51,53-71,81,177,187-205,207,217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8-ntes.9",
+  "base_commit_sha": "6abe33f42018f0e2048b0b50142e94f176fcae54",
+  "prompts": {
+    "86e9f208f57cfa26": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "updates",
+        "model": "unknown"
+      },
+      "human_author": "ggvswild",
+      "messages": [],
+      "total_additions": 557,
+      "total_deletions": 77,
+      "accepted_lines": 499,
+      "overriden_lines": 0,
+      "per_file_stats": {
+        "Info.plist": {
+          "additions": 4,
+          "deletions": 2,
+          "accepted_lines": 4
+        },
+        "icon/render.swift": {
+          "additions": 211,
+          "deletions": 46,
+          "accepted_lines": 165
+        },
+        "README.md": {
+          "additions": 46,
+          "deletions": 6,
+          "accepted_lines": 46
+        },
+        "dmg.sh": {
+          "additions": 108,
+          "deletions": 6,
+          "accepted_lines": 102
+        },
+        "build.sh": {
+          "additions": 11,
+          "deletions": 1,
+          "accepted_lines": 11
+        },
+        ".gitignore": {
+          "additions": 2,
+          "accepted_lines": 2
+        },
+        "main.swift": {
+          "additions": 82,
+          "deletions": 11,
+          "accepted_lines": 81
+        },
+        "dmg/render-background.swift": {
+          "additions": 93,
+          "deletions": 5,
+          "accepted_lines": 88
+        }
+      }
+    }
+  }
+}
