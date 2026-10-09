@@ -50,7 +50,7 @@ A fullscreen black cover for macOS. Programs keep running and the session stays 
 
 ### 下载安装
 
-打开 `Blackout-1.0.dmg`，把 Blackout 拖到「应用程序」文件夹，再双击打开。
+下载 [Blackout-1.0.dmg](https://github.com/ggvswild/blackout/releases/download/v1.0/Blackout-1.0.dmg)，把 Blackout 拖到「应用程序」文件夹，再双击打开。发布页在 [v1.0](https://github.com/ggvswild/blackout/releases/tag/v1.0)。
 
 第一次从网上打开时，macOS 会说无法验证开发者。这个安装包没有做公证。在访达里按住 Control 点 Blackout，选「打开」，再确认一次。也可以在拖进应用程序之后执行：
 
@@ -186,7 +186,7 @@ An existing terminal on this Mac can run the same command. `killall blackout` al
 
 ### Download
 
-Open `Blackout-1.0.dmg`, drag Blackout to Applications, then open it.
+Download [Blackout-1.0.dmg](https://github.com/ggvswild/blackout/releases/download/v1.0/Blackout-1.0.dmg), drag Blackout to Applications, then open it. The release page is [v1.0](https://github.com/ggvswild/blackout/releases/tag/v1.0).
 
 The disk image is not notarized. The first time macOS says the developer cannot be verified, Control-click Blackout in Finder, choose Open, and confirm. After it is in Applications you can also run:
 
