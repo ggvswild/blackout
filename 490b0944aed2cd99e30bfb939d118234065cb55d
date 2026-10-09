@@ -1,0 +1,30 @@
+README.md
+  86e9f208f57cfa26 53,189
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8-ntes.9",
+  "base_commit_sha": "490b0944aed2cd99e30bfb939d118234065cb55d",
+  "prompts": {
+    "86e9f208f57cfa26": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "updates",
+        "model": "unknown"
+      },
+      "human_author": "ggvswild",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0,
+      "per_file_stats": {
+        "README.md": {
+          "additions": 2,
+          "deletions": 2,
+          "accepted_lines": 2
+        }
+      }
+    }
+  }
+}
