@@ -33,6 +33,71 @@ private func exePath() -> String {
     return CommandLine.arguments[0]
 }
 
+private func homeDirectory() -> String {
+    if let env = getenv("HOME"), let value = String(validatingUTF8: env), !value.isEmpty {
+        return value
+    }
+    return NSHomeDirectory()
+}
+
+/// 把 `~/.local/bin/blackout` 指到当前这份 App。从安装盘里直接运行时不写，免得指到会消失的路径。
+private func installCommandLink() {
+    let exe = exePath()
+    guard exe.contains("/Blackout.app/Contents/MacOS/") else { return }
+    if exe.hasPrefix("/Volumes/") { return }
+    let binDir = URL(fileURLWithPath: homeDirectory(), isDirectory: true)
+        .appendingPathComponent(".local/bin", isDirectory: true)
+    do {
+        try FileManager.default.createDirectory(at: binDir, withIntermediateDirectories: true)
+    } catch {
+        return
+    }
+    let quoted = "'" + exe.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    let script = "#!/bin/sh\nexec \(quoted) \"$@\"\n"
+    let link = binDir.appendingPathComponent("blackout")
+    if let existing = try? String(contentsOf: link, encoding: .utf8),
+       existing.lowercased() == script.lowercased() {
+        return
+    }
+    do {
+        try script.write(to: link, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: link.path)
+    } catch {
+        return
+    }
+}
+
+private func commandOnPath() -> Bool {
+    let bin = URL(fileURLWithPath: homeDirectory(), isDirectory: true)
+        .appendingPathComponent(".local/bin").path
+    let path = ProcessInfo.processInfo.environment["PATH"] ?? ""
+    return path.split(separator: ":").contains { String($0) == bin }
+}
+
+private func promptSetPhraseInTerminal() {
+    let source = """
+    on run argv
+        try
+            display dialog "还没有解锁口令。" & return & "打开终端设一次，输入时不会显示。" buttons {"稍后", "打开终端"} default button "打开终端" with title "blackout"
+        on error
+            return
+        end try
+        if button returned of result is "打开终端" then
+            set exe to item 1 of argv
+            tell application "Terminal"
+                activate
+                do script quoted form of exe & " set-phrase"
+            end tell
+        end if
+    end run
+    """
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+    task.arguments = ["-e", source, exePath()]
+    try? task.run()
+    task.waitUntilExit()
+}
+
 private enum Paths {
     static var dir: URL {
         let home: String
@@ -57,7 +122,7 @@ private enum Paths {
 }
 
 private func phraseProblem(_ text: String) -> String? {
-    if text.count < 6 { return "至少 6 个字符" }
+    if text.count < 5 { return "至少 5 个字符" }
     if text.count > 128 { return "最多 128 个字符" }
     if text.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) {
         return "不能包含控制字符"
@@ -195,7 +260,7 @@ private struct PhraseMatcher {
         matcher.feed("啊你好呀哦")
         check("unicode", matcher.confirm() == true)
 
-        check("short phrase", phraseProblem("short") != nil)
+        check("short phrase", phraseProblem("tiny") != nil)
         check("ok phrase", phraseProblem("longenough") == nil)
         check("control", phraseProblem("ok\u{1}phrase") != nil)
 
@@ -835,12 +900,7 @@ private func launch(mode: Mode, visualOnly: Bool) {
     guard readPhrase() != nil else {
         err("还没有解锁口令。请先运行：blackout set-phrase\n")
         if isatty(STDIN_FILENO) == 0 && isatty(STDERR_FILENO) == 0 {
-            let source = "display dialog \"请先在终端运行 blackout set-phrase\" buttons {\"好\"} default button 1 with title \"blackout\""
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
-            task.arguments = ["-e", source]
-            try? task.run()
-            task.waitUntilExit()
+            promptSetPhraseInTerminal()
         }
         exit(1)
     }
@@ -974,7 +1034,7 @@ private func hideEchoForSetup() {
 private func commandSetPhrase() {
     hideEchoForSetup()
     for _ in 0..<3 {
-        guard let first = readSecret("解锁口令（输入时不显示，至少 6 位）：") else {
+        guard let first = readSecret("解锁口令（输入时不显示，至少 5 位）：") else {
             err("没有读到口令。\n")
             exit(1)
         }
@@ -999,6 +1059,9 @@ private func commandSetPhrase() {
         }
         err("已保存到 \(Paths.phrase.path)\n")
         err("黑屏后没有提示。口令前后可以夹别的字，打完按回车才退出。区分大小写。\n")
+        if !commandOnPath() {
+            err("当前终端如果找不到 blackout，先执行：export PATH=\"$HOME/.local/bin:$PATH\"\n")
+        }
         if phrase.allSatisfy(\.isASCII) == false {
             err("口令含非英文字符。黑屏时不会切到英文输入法，输入法候选条可能露出来。\n")
         }
@@ -1029,7 +1092,7 @@ private let helpText = """
 blackout — 把所有显示器盖成纯黑。程序继续跑，会话也不锁定。这不是锁屏。
 
 用法
-  blackout set-phrase      设置盲打解锁口令（至少 6 位，不会写进口令参数）
+  blackout set-phrase      设置盲打解锁口令（至少 5 位，不会写进口令参数）
   blackout                 立刻黑屏，解锁后退出
   blackout engage          同上，适合做成快捷指令
   blackout watch           常驻。按 Control+Option+Command+B 黑屏，解锁后继续等待
@@ -1041,6 +1104,11 @@ blackout — 把所有显示器盖成纯黑。程序继续跑，会话也不锁�
   blackout --visual-only   不拦键盘，只盖一层黑。快捷键可能穿透
   blackout --self-test     跑口令匹配自测，不会黑屏
   blackout help            显示这段说明
+
+安装
+  打开 Blackout.dmg，把应用拖到「应用程序」文件夹，再打开一次。
+  还没有口令时，会问要不要打开终端。输入时不显示，要输入两遍。
+  命令放在 ~/.local/bin/blackout。这个目录不在 PATH 里时，用上面的提示把它加进去。
 
 解锁
   黑屏后打一串字，里面含有口令即可，前后可以是别的字符。按回车才检查。
@@ -1130,6 +1198,9 @@ private func engageExistingOrLaunch(mode: Mode, visualOnly: Bool) {
 
 recoverInputSourceIfOrphaned()
 private let parsed = parseCommand()
+if parsed.0 != .help && parsed.0 != .selfTest {
+    installCommandLink()
+}
 switch parsed.0 {
 case .help:
     print(helpText)

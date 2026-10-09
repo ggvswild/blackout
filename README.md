@@ -38,7 +38,7 @@ A fullscreen black cover for macOS. Programs keep running and the session stays 
    blackout
    ```
 
-至少 6 个字符，最多 128 个。不要用同一种字符重复，别人一直按一个键时有机会撞上。口令含中文或其他非 ASCII 字符时，黑屏期间不会切换输入法，输入法候选条可能露出来。
+至少 5 个字符，最多 128 个。不要用同一种字符重复，别人一直按一个键时有机会撞上。口令含中文或其他非 ASCII 字符时，黑屏期间不会切换输入法，输入法候选条可能露出来。
 
 忘了口令时，从另一台电脑 SSH 到这台 Mac，执行：
 
@@ -48,7 +48,27 @@ A fullscreen black cover for macOS. Programs keep running and the session stays 
 
 这台机器上如果已经有别的终端，也可以在那里执行同一条命令。`killall blackout` 同样会揭开画面。重启之后遮罩消失，桌面按你原来的登录设置回来。
 
-### 安装
+### 下载安装
+
+打开 `Blackout-1.0.dmg`，把 Blackout 拖到「应用程序」文件夹，再双击打开。
+
+第一次从网上打开时，macOS 会说无法验证开发者。这个安装包没有做公证。在访达里按住 Control 点 Blackout，选「打开」，再确认一次。也可以在拖进应用程序之后执行：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Blackout.app
+```
+
+还没有口令时，应用会问要不要打开终端。在终端里输入口令，输入时不显示，要再输入一次。设好之后回到访达再打开一次，它就在后台等快捷键 Control+Option+Command+B，不会立刻黑屏。这个应用不出现在程序坞里。
+
+终端命令写在 `~/.local/bin/blackout`。如果终端提示找不到命令，执行：
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+第一次黑屏前，还要在「系统设置 → 隐私与安全性 → 输入监控」里允许 Blackout。允许的是已经放进「应用程序」的那一份，允许之后不要再移动它。
+
+### 从源码编译
 
 需要 macOS 13 或更新版本，以及 Xcode 或 Command Line Tools 里的 `swiftc`。在要使用的那台 Mac 上编译：
 
@@ -58,7 +78,7 @@ cd blackout
 ./build.sh
 ```
 
-`build.sh` 会生成 `Blackout.app`，做 ad-hoc 签名，并在 `~/.local/bin/blackout` 放一个启动脚本。请确认这个目录在 `PATH` 里。
+`build.sh` 会生成 `Blackout.app`，做 ad-hoc 签名，并在 `~/.local/bin/blackout` 放一个启动脚本。请确认这个目录在 `PATH` 里。`./dmg.sh` 会先编译，再打出 `dist/Blackout-1.0.dmg`。
 
 ### 命令
 
@@ -154,7 +174,7 @@ The black screen has no field and no hint. You type the passphrase you stored wi
    blackout
    ```
 
-Use at least 6 characters and at most 128. A passphrase made of one repeated character can be hit by someone holding a key. A passphrase with Chinese or other non-ASCII characters does not switch the input source, so an input-method candidate window may appear.
+Use at least 5 characters and at most 128. A passphrase made of one repeated character can be hit by someone holding a key. A passphrase with Chinese or other non-ASCII characters does not switch the input source, so an input-method candidate window may appear.
 
 If you forget the phrase, SSH into this Mac from another computer and run:
 
@@ -164,7 +184,27 @@ If you forget the phrase, SSH into this Mac from another computer and run:
 
 An existing terminal on this Mac can run the same command. `killall blackout` also removes the cover. After a reboot the cover is gone, and the desktop returns under your normal login settings.
 
-### Install
+### Download
+
+Open `Blackout-1.0.dmg`, drag Blackout to Applications, then open it.
+
+The disk image is not notarized. The first time macOS says the developer cannot be verified, Control-click Blackout in Finder, choose Open, and confirm. After it is in Applications you can also run:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Blackout.app
+```
+
+If no passphrase is stored yet, the app offers to open Terminal. Type the passphrase twice. It is not echoed. Open the app from Finder again after that. It waits for Control+Option+Command+B and does not cover the screen immediately. It does not show a Dock icon.
+
+The command is installed at `~/.local/bin/blackout`. If the shell cannot find it:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Before the first cover, allow Blackout under System Settings → Privacy & Security → Input Monitoring. Allow the copy in Applications, and do not move it after that.
+
+### Build from source
 
 macOS 13 or later, and `swiftc` from Xcode or the Command Line Tools. Build it on the Mac where you will run it:
 
@@ -174,7 +214,7 @@ cd blackout
 ./build.sh
 ```
 
-`build.sh` creates `Blackout.app`, ad-hoc signs it, and writes a launcher to `~/.local/bin/blackout`. That directory needs to be on your `PATH`.
+`build.sh` creates `Blackout.app`, ad-hoc signs it, and writes a launcher to `~/.local/bin/blackout`. That directory needs to be on your `PATH`. `./dmg.sh` builds the app, then writes `dist/Blackout-1.0.dmg`.
 
 ### Commands
 
