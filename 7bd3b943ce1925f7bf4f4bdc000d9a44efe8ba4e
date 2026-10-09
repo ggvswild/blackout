@@ -1,0 +1,37 @@
+README.md
+  86e9f208f57cfa26 3,5,29,35,119,145,151,235
+main.swift
+  86e9f208f57cfa26 22-23,128,130-131,134,137-138,140-141,149-156,167-168,171-172,175-176,178-186,189-192,194-196,488-491,498-509,512,514-523,1001,1046-1048
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8-ntes.9",
+  "base_commit_sha": "7bd3b943ce1925f7bf4f4bdc000d9a44efe8ba4e",
+  "prompts": {
+    "86e9f208f57cfa26": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "updates",
+        "model": "unknown"
+      },
+      "human_author": "ggvswild",
+      "messages": [],
+      "total_additions": 79,
+      "total_deletions": 52,
+      "accepted_lines": 79,
+      "overriden_lines": 0,
+      "per_file_stats": {
+        "main.swift": {
+          "additions": 71,
+          "deletions": 44,
+          "accepted_lines": 71
+        },
+        "README.md": {
+          "additions": 8,
+          "deletions": 8,
+          "accepted_lines": 8
+        }
+      }
+    }
+  }
+}
